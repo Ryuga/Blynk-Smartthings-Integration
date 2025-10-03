@@ -1,0 +1,20 @@
+[tool.poetry]
+name = "poetry init"
+version = "0.1.0"
+description = "Smartthings SmartApp to integrate Blynk.IO"
+authors = ["Ryuga <vaishnav2353@gmail.com>"]
+license = "MIT LICENSE"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+smartapp-sdk = "^0.9.0"
+importlib = "^1.0.4"
+uvicorn = "^0.37.0"
+fastapi = {extras = ["standard"], version = "^0.118.0"}
+python-decouple = "^3.8"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

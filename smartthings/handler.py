@@ -107,6 +107,7 @@ class EventHandler(SmartAppEventHandler):
         )
 
     def handle_event(self, correlation_id: Optional[str], request: EventRequest) -> None:
+        # Extract the device ID and pass the event type into the handler
         for event in request.event_data.events:
             if event.event_type != EventType.DEVICE_EVENT:
                 continue

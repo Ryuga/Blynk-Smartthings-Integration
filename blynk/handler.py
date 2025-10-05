@@ -13,6 +13,8 @@ class BlynkHandler(object):
     def __init__(self):
         self.device_map = {}
         controller = BlynkController()
+
+        # The device id provided is the Smartthings Virtual Switch ID.
         light_b = Device("09dda55d-f75d-4869-982a-894212e467a9", config.LIGHT_B_TOKEN, "V1", DeviceType.LIGHT, DeviceState.OFF, controller)
         light_p = Device("29d20941-7e70-4cc4-8872-c6dc94b4f24e", config.LIGHT_P_TOKEN, "V2", DeviceType.LIGHT, DeviceState.OFF, controller)
         self.device_map[light_b.id] = light_b

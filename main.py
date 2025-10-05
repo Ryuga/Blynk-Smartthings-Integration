@@ -4,7 +4,7 @@ from fastapi import FastAPI, Request, Response
 from smartapp.interface import ConfigSection, DeviceSetting, SmartAppConfigPage, SmartAppDefinition
 from smartapp.interface import SmartAppRequestContext
 from smartapp.dispatcher import SmartAppDispatcher
-from starlette.responses import JSONResponse
+from fastapi.responses import JSONResponse
 
 from smartthings.handler import EventHandler
 

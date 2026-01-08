@@ -1,4 +1,6 @@
 import codecs
+import asyncio
+import config
 
 from fastapi import FastAPI, Request, Response
 from smartapp.interface import ConfigSection, DeviceSetting, SmartAppConfigPage, SmartAppDefinition
@@ -7,8 +9,7 @@ from smartapp.dispatcher import SmartAppDispatcher
 from fastapi.responses import JSONResponse
 
 from smartthings.handler import EventHandler
-
-import config
+from blynk.tasks import power_saving_background_task
 
 api = FastAPI()
 
@@ -55,3 +56,8 @@ async def smart_app(request: Request) -> Response:
 @api.get("/ryuga")
 async def ping() -> JSONResponse:
     return JSONResponse(content={"message": "Hi I'm Ryuga 😀 | Thanks for discovering this hidden endpoint! | Reach me at github.com/Ryuga"}, status_code=200)
+
+
+@api.on_event("startup")
+async def start_background_tasks():
+    asyncio.create_task(power_saving_background_task())

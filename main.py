@@ -53,7 +53,7 @@ async def smart_app(request: Request) -> Response:
     return Response(status_code=200, content=content, media_type="application/json")
 
 
-@api.get("/ryuga")
+@api.api_route("/ryuga", methods=["GET", "HEAD"])
 async def ping() -> JSONResponse:
     return JSONResponse(content={"message": "Hi I'm Ryuga 😀 | Thanks for discovering this hidden endpoint! | Reach me at github.com/Ryuga"}, status_code=200)
 

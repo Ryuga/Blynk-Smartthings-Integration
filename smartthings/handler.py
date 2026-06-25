@@ -13,16 +13,13 @@ from smartapp.interface import (
     UpdateRequest
 )
 
-from blynk.models import DeviceEvent, DeviceState
 from smartthings.controller import SmartthingsController
 from smartthings.models import Subscription
-from smartthings.utils import SmartThingsUtils
-from blynk.handler import BlynkHandler
-
+from blynk.controller import BlynkController
 
 ACTIVE_SUBSCRIPTIONS = {}
 
-blynk = BlynkHandler()
+blynk = BlynkController()
 
 
 def load_active_subscriptions(auth_token, installed_app_id) -> None:
@@ -40,19 +37,57 @@ def update_active_subscriptions(added_switches, removed_switches, auth_token, in
     for _id in removed_switches:
         sub_id = ACTIVE_SUBSCRIPTIONS.pop(_id, None)
         if sub_id:
-            SmartthingsController.delete_device_subscription(
+            try:
+                SmartthingsController.delete_device_subscription(
+                    installed_app_id=installed_app_id,
+                    auth_token=auth_token,
+                    subscription_id=sub_id
+                )
+            except Exception as e:
+                print(f"Failed to delete subscription {sub_id}: {e}")
+
+    for _id in added_switches:
+        if _id in ACTIVE_SUBSCRIPTIONS:
+            continue
+
+        try:
+            data = SmartthingsController.create_device_subscription(
                 installed_app_id=installed_app_id,
                 auth_token=auth_token,
-                subscription_id=sub_id
+                device_id=_id
             )
-    for _id in added_switches:
-        data = SmartthingsController.create_device_subscription(
-            installed_app_id=installed_app_id,
-            auth_token=auth_token,
-            device_id=_id
-        )
-        if data.get("id"):
-            ACTIVE_SUBSCRIPTIONS[_id] = data.get("id")
+            if data and data.get("id"):
+                ACTIVE_SUBSCRIPTIONS[_id] = data.get("id")
+        except requests.exceptions.HTTPError as err:
+            if err.response.status_code == 409:
+                print(f"Subscription for device {_id} already exists. Skipping.")
+                load_active_subscriptions(auth_token, installed_app_id)
+            else:
+                raise err
+
+
+def get_configured_mappings(config: dict) -> dict:
+    """Extracts device-to-blynk mappings, handling tokens and pins separately."""
+    mappings = {}
+    seen = set()
+    for i in range(1, 11):
+        switch_config = config.get(f"switch_{i}", [])
+        blynk_pin_list = config.get(f"blynk_id_{i}", [])
+        blynk_token_list = config.get(f"blynk_token_{i}", [])
+
+        if switch_config and blynk_pin_list and blynk_token_list:
+            device_id = switch_config[0].device_config.device_id
+            pin = blynk_pin_list[0].string_config.value
+            token = blynk_token_list[0].string_config.value
+
+            if pin and token and (device_id not in seen):
+                mappings[device_id] = {"pin": pin, "token": token}
+                seen.add(device_id)
+
+    return mappings
+
+
+
 
 class EventHandler(SmartAppEventHandler):
 
@@ -73,16 +108,17 @@ class EventHandler(SmartAppEventHandler):
 
     def handle_install(self, correlation_id: Optional[str], request: InstallRequest) -> None:
         data = request.install_data
-        switches = data.installed_app.config.get("switch", [])
+        config = data.installed_app.config
+        mappings = get_configured_mappings(config)
 
-        for switch in switches:
+        for device_id in mappings.keys():
             response = SmartthingsController.create_device_subscription(
                 installed_app_id=data.installed_app.installed_app_id,
                 auth_token=data.auth_token,
-                device_id=switch.device_config.device_id
+                device_id=device_id
             )
             if response.get("id", None):
-                ACTIVE_SUBSCRIPTIONS[switch.device_config.device_id] = response.get("id")
+                ACTIVE_SUBSCRIPTIONS[device_id] = response.get("id")
 
 
 
@@ -90,11 +126,11 @@ class EventHandler(SmartAppEventHandler):
         update_data = request.update_data
         installed_app_id = update_data.installed_app.installed_app_id
 
-        previous_data  = update_data.previous_config.get("switch", [])
-        current_data = update_data.installed_app.config.get("switch", [])
+        current_mappings = get_configured_mappings(update_data.installed_app.config)
+        previous_mappings = get_configured_mappings(update_data.previous_config)
 
-        existing_switches = set(SmartThingsUtils.get_switch_ids(previous_data))
-        current_switches = set(SmartThingsUtils.get_switch_ids(current_data))
+        existing_switches = set(previous_mappings.keys())
+        current_switches = set(current_mappings.keys())
 
         removed_switches = existing_switches - current_switches
         added_switches = current_switches - existing_switches
@@ -107,7 +143,8 @@ class EventHandler(SmartAppEventHandler):
         )
 
     def handle_event(self, correlation_id: Optional[str], request: EventRequest) -> None:
-        # Extract the device ID and pass the event type into the handler
+        mappings = get_configured_mappings(request.event_data.installed_app.config)
+
         for event in request.event_data.events:
             if event.event_type != EventType.DEVICE_EVENT:
                 continue
@@ -121,5 +158,13 @@ class EventHandler(SmartAppEventHandler):
             if not (dev_id and state):
                 continue
 
-            dev_state = DeviceState.ON if state.lower() == "on" else DeviceState.OFF
-            blynk.handle_device_event(DeviceEvent(dev_id, dev_state))
+            mapping_data = mappings.get(dev_id)
+            if mapping_data:
+                token = mapping_data.get("token")
+                pin = mapping_data.get("pin")
+                state = 1 if state.lower() == "on" else 0
+                blynk.set_status(
+                    token=token,
+                    pin=pin,
+                    state=state
+                )

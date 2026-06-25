@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: blynk-smartthings-integration
+    runtime: python
+    plan: free
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "uvicorn main:app --host 0.0.0.0 --port $PORT"
+    envVars:
+      - key: NUMBER_OF_DEVICES
+        value: "5"
+      - key: PYTHON_VERSION
+        value: "3.11"
+      - key: TARGET_URL
+        sync: false
+      # Set TARGET_URL in case of custom domain, Else leave empty.

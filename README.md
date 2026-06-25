@@ -8,7 +8,8 @@ This integration allows you to control your Blynk devices directly from the Smar
 
 ## Why this exists?
 
-I found myself managing a large number of Blynk.io devices, but I grew tired of switching back and forth between apps just to control my devices. I wanted a unified experience where all my home automation devices lived in one place. By building this bridge, I’ve effectively "exported" my Blynk controls into SmartThings, allowing me to treat my Blynk devices as native SmartThings virtual switches.
+I found myself managing a large number of Blynk.io devices, but I grew tired of switching back and forth between apps just to control my devices. I wanted a unified experience where all my home automation devices lived in one place. 
+By building this bridge, I’ve effectively "exported" my Blynk controls into SmartThings, allowing me to treat my Blynk devices as native SmartThings devices, control them via routines and use all available integrations via Smartthings.
 
 As an added bonus if you have a samsung phone, the controls gets integrated natively into the device control panel.
 
@@ -75,17 +76,19 @@ Deploy the application to your preferred hosting service (e.g., Render, GCP App 
 
 ### 4. Setup in SmartThings App
 
+> Create **Virtual Switches** first via the "SmartThings Labs" option in the app if you haven't already.
+
+
 1. Open the **SmartThings mobile app**.
-2. Navigate to **Routines** or the **"+" (Add)** menu and look for the **Discover** tab.
+2. Navigate to **Routines**  and look for the **Discover** tab.
 3. Scroll to the bottom; your new SmartApp will be listed under "My SmartApps".
 4. Click the app to install it.
 5. **Configuration:**
-* Create **Virtual Switches** first via the "SmartThings Labs" option in the app if you haven't already.
-* In the bridge app settings, select your virtual switches.
-* Enter the corresponding **Blynk Pin** and **Blynk Auth Token** for each switch.
+* Click on the SmartApp app which would start the installation, select your virtual switches.
+* Select the corresponding **Blynk Pin** and enter the **Blynk Auth Token** for each switch.
 * Hit **Save**.
 
 
 
-You are now ready to control your Blynk hardware using the virtual switches integrated directly into your SmartThings ecosystem!
+You can now control your Blynk devices using the virtual switches integrated directly into your SmartThings ecosystem!
 
